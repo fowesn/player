@@ -61,10 +61,6 @@
 #include <QAudioProbe>
 #include <QMediaMetaData>
 #include <QtWidgets>
-#include <QtAlgorithms>
-
-QTextStream cout(stdout);
-QTextStream cin(stdin);
 
 Player::Player(QWidget *parent)
     : QWidget(parent)
@@ -94,84 +90,26 @@ Player::Player(QWidget *parent)
     m_videoWidget = new VideoWidget(this);
     m_player->setVideoOutput(m_videoWidget);
 
+    m_playlistModel = new PlaylistModel(this);
+    m_playlistModel->setPlaylist(m_playlist);
+//! [2]
+
     m_videoWidget->setAcceptDrops(true);
 
 
-    m_playlistModel = new PlaylistModel(this);
-    m_playlistModel->setPlaylist(m_playlist);
-
     m_playlistView = new QListView(this);
-    //m_playlistView = new QListWidget(this);
     m_playlistView->setModel(m_playlistModel);
-    m_playlistView->setCurrentIndex(m_playlistModel->index(m_playlist->currentIndex(), 0));
 
-
-    m_playlistView->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    m_playlistView->setDragEnabled(true);
     m_playlistView->setAcceptDrops(true);
-    m_playlistView->setDropIndicatorShown(true);
-
-    /**/
-
-    QStringList filters;
-    filters.append("*.webm");
-    filters.append("*.mp3");
-
-    QFileSystemModel *filemodel = new QFileSystemModel;
-    filemodel->setRootPath(QDir::currentPath());
-    filemodel->setNameFilters(filters);
-
-    QTreeView *filetree = new QTreeView();
-    filetree->setModel(filemodel);
-    filetree->setDragDropMode(QAbstractItemView::InternalMove);
-    filetree->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    filetree->setDragEnabled(true);
-    filetree->setAcceptDrops(true);
-    filetree->setDropIndicatorShown(true);
-
-    QSortFilterProxyModel *proxyModel = new QSortFilterProxyModel(this);
-
-    proxyModel->setSourceModel(filemodel);
-    /*proxyModel->setFilterRegExp(QRegExp(".mp3", Qt::CaseInsensitive,
-                                             QRegExp::FixedString));*/
-    filetree->setModel(proxyModel);
-
-    filetree->setRootIndex(filemodel->index(QDir::currentPath()));
-
-
-    /*m_playlistView->setSelectionMode(QAbstractItemView::MultiSelection);
     m_playlistView->setDragEnabled(true);
-    m_playlistView->setAcceptDrops(true);
     m_playlistView->setDropIndicatorShown(true);
     m_playlistView->viewport()->setAcceptDrops(true);
-    m_playlistView->setDragDropMode(QAbstractItemView::InternalMove);*/
-
-    /*m_playlistModel = new PlaylistModel(this);
-    m_playlistModel->setPlaylist(m_playlist);
-
-   QListView *m_playlistView = new QListView(this);
-    m_playlistView->setSelectionMode(QAbstractItemView::ExtendedSelection);
-    m_playlistView->setDragEnabled(true);
-    m_playlistView->setAcceptDrops(true);
-    m_playlistView->setDropIndicatorShown(true);
-
-
-   //m_playlistView = new QListView(this);
-    //m_playlistModel = new QStandardItemModel(m_playlistView);
-    m_playlistView->setModel(m_playlistModel);
+    m_playlistView->setDragDropMode(QAbstractItemView::InternalMove);
     m_playlistView->setCurrentIndex(m_playlistModel->index(m_playlist->currentIndex(), 0));
-    //m_playlistView->setDragDropMode(true);*/
-    /*
-     *
-     *
-     */
-    //m_playlistView->setDragEnabled(true);
 
     setAcceptDrops(true);
 
-    //connect(m_playlistView, &QAbstractItemView::clicked, this, &Player::jump);
-
-    connect(m_playlistView, &QAbstractItemView::doubleClicked, this, &Player::jump);
+    connect(m_playlistView, &QAbstractItemView::activated, this, &Player::jump);
 
     m_slider = new QSlider(Qt::Horizontal, this);
     m_slider->setRange(0, m_player->duration() / 1000);
@@ -200,9 +138,11 @@ Player::Player(QWidget *parent)
 
     connect(openButton, &QPushButton::clicked, this, &Player::open);
 
-    delButton = new QPushButton(tr("Delete"), this);
+    //
+    QPushButton *deleteButton = new QPushButton(tr("Delete"), this);
 
-    connect(delButton, &QPushButton::clicked, this, &Player::deleteClickedElement);
+    connect(deleteButton, &QPushButton::clicked, this, &Player::del);
+    //
 
     PlayerControls *controls = new PlayerControls(this);
     controls->setState(m_player->state());
@@ -210,7 +150,6 @@ Player::Player(QWidget *parent)
     controls->setMuted(controls->isMuted());
 
     connect(controls, &PlayerControls::play, m_player, &QMediaPlayer::play);
-    //connect(controls, &PlayerControls::deleteClicked, this, &Player::deleteClickedElement);
     connect(controls, &PlayerControls::pause, m_player, &QMediaPlayer::pause);
     connect(controls, &PlayerControls::stop, m_player, &QMediaPlayer::stop);
     connect(controls, &PlayerControls::next, m_playlist, &QMediaPlaylist::next);
@@ -224,12 +163,12 @@ Player::Player(QWidget *parent)
     connect(m_player, &QMediaPlayer::volumeChanged, controls, &PlayerControls::setVolume);
     connect(m_player, &QMediaPlayer::mutedChanged, controls, &PlayerControls::setMuted);
 
-    //m_fullScreenButton = new QPushButton(tr("FullScreen"), this);
-    //m_fullScreenButton->setCheckable(true);
+    m_fullScreenButton = new QPushButton(tr("FullScreen"), this);
+    m_fullScreenButton->setCheckable(true);
 
-    /*m_colorButton = new QPushButton(tr("Color Options..."), this);
+    m_colorButton = new QPushButton(tr("Color Options..."), this);
     m_colorButton->setEnabled(false);
-    connect(m_colorButton, &QPushButton::clicked, this, &Player::showColorDialog);*/
+    connect(m_colorButton, &QPushButton::clicked, this, &Player::showColorDialog);
 
     QBoxLayout *displayLayout = new QHBoxLayout;
     displayLayout->addWidget(m_videoWidget, 2);
@@ -238,12 +177,14 @@ Player::Player(QWidget *parent)
     QBoxLayout *controlLayout = new QHBoxLayout;
     controlLayout->setMargin(0);
     controlLayout->addWidget(openButton);
+    //
+    controlLayout->addWidget(deleteButton);
+    //
     controlLayout->addStretch(1);
     controlLayout->addWidget(controls);
     controlLayout->addStretch(1);
-    //controlLayout->addWidget(m_fullScreenButton);
-    //controlLayout->addWidget(m_colorButton);
-    controlLayout->addWidget(delButton);
+    controlLayout->addWidget(m_fullScreenButton);
+    controlLayout->addWidget(m_colorButton);
 
     QBoxLayout *layout = new QVBoxLayout;
     layout->addLayout(displayLayout);
@@ -253,8 +194,6 @@ Player::Player(QWidget *parent)
     layout->addLayout(hLayout);
     layout->addLayout(controlLayout);
     layout->addLayout(histogramLayout);
-
-    layout->addWidget(filetree);
 
     setLayout(layout);
 
@@ -266,8 +205,8 @@ Player::Player(QWidget *parent)
         controls->setEnabled(false);
         m_playlistView->setEnabled(false);
         openButton->setEnabled(false);
-        // m_colorButton->setEnabled(false);
-        //m_fullScreenButton->setEnabled(false);
+        m_colorButton->setEnabled(false);
+        m_fullScreenButton->setEnabled(false);
     }
 
     metaDataChanged();
@@ -276,22 +215,6 @@ Player::Player(QWidget *parent)
 Player::~Player()
 {
 }
-
-/*
-void Player::dragEnterEvent(QDragEnterEvent *event)
-{
-    if (event->mimeData()->hasUrls()) {
-        event->acceptProposedAction();
-    }
-}
-
-void Player::dropEvent(QDropEvent *event)
-{
-    foreach (const QUrl &url, event->mimeData()->urls()) {
-        QString fileName = url.toLocalFile();
-        qDebug() << "Dropped file:" << fileName;
-    }
-}*/
 
 bool Player::isPlayerAvailable() const
 {
@@ -309,11 +232,19 @@ void Player::open()
         fileDialog.setMimeTypeFilters(supportedMimeTypes);
     }
     fileDialog.setDirectory(QStandardPaths::standardLocations(QStandardPaths::MoviesLocation).value(0, QDir::homePath()));
-    if (fileDialog.exec() == QDialog::Accepted) {
+    if (fileDialog.exec() == QDialog::Accepted)
         addToPlaylist(fileDialog.selectedUrls());
-    }
 }
 
+//
+void Player::del()
+{
+    clearHistogram();
+    int current = m_playlistView->currentIndex().row();
+    m_playlist->removeMedia(current);
+    m_playlistView->setCurrentIndex(m_playlistModel->index(current, 0));
+}
+//
 static bool isPlaylist(const QUrl &url) // Check for ".m3u" playlists.
 {
     if (!url.isLocalFile())
@@ -325,9 +256,8 @@ static bool isPlaylist(const QUrl &url) // Check for ".m3u" playlists.
 void Player::addToPlaylist(const QList<QUrl> &urls)
 {
     for (auto &url: urls) {
-        if (isPlaylist(url)) {
+        if (isPlaylist(url))
             m_playlist->load(url);
-        }
         else
             m_playlist->addMedia(url);
     }
@@ -374,49 +304,6 @@ void Player::previousClicked()
         m_player->setPosition(0);
 }
 
-void Player::deleteClickedElement()
-{
-    //m_playlist->removeMedia(m_playlist->currentIndex());
-    if( m_playlistView ) {
-        QModelIndexList indexes;
-        indexes = m_playlistView->selectionModel()->selectedIndexes();
-        qSort(indexes.begin(), indexes.end(), qGreater<QModelIndex>());
-        for (auto &index: indexes ) {
-            m_playlist->removeMedia(index.row());
-        }
-    }
-}
-
-
-/*
-void Player::jump(const QModelIndex &index)
-{
-
-    if (index.isValid()) {
-        m_playlistModel->removeRow(m_playlist->currentIndex());
-    }
-
-    //m_playlist->removeMedia(index.row());
-
-    cout << m_playlist->currentIndex();
-    cout << "hello";
-    cout << index.row();
-}*/
-
-/*void Player::keyPressEvent(QKeyEvent *event) {
-    int key=event->key();
-    if (key>=Qt::Key_0 && key<=Qt::Key_9) { //Цифровые клавиши 0..9
-      cout << "99";
-     }
-
-}*/
-
-/*void Player::jump(const QModelIndex &index)
-{
-   cout << "DragAndDropItemList" << "\n";
-}*/
-
-
 void Player::jump(const QModelIndex &index)
 {
     if (index.isValid()) {
@@ -425,8 +312,25 @@ void Player::jump(const QModelIndex &index)
     }
 }
 
+void Player::dragEnterEvent(QDragEnterEvent *event)
+{
+    event->accept();
+}
+
+void Player::dropEvent(QDropEvent *event)
+{
+    for (auto &url: event->mimeData()->urls()) {
+        QUrl path = "file://" + url.toLocalFile();
+        QList<QUrl> pathList;
+        pathList.append(path);
+        addToPlaylist(pathList);
+    }
+}
+
+
 void Player::playlistPositionChanged(int currentItem)
 {
+    curItem = currentItem;
     clearHistogram();
     m_playlistView->setCurrentIndex(m_playlistModel->index(currentItem, 0));
 }
@@ -490,17 +394,17 @@ void Player::bufferingProgress(int progress)
 void Player::videoAvailableChanged(bool available)
 {
     if (!available) {
-        //disconnect(m_fullScreenButton, &QPushButton::clicked, m_videoWidget, &QVideoWidget::setFullScreen);
+        disconnect(m_fullScreenButton, &QPushButton::clicked, m_videoWidget, &QVideoWidget::setFullScreen);
         disconnect(m_videoWidget, &QVideoWidget::fullScreenChanged, m_fullScreenButton, &QPushButton::setChecked);
         m_videoWidget->setFullScreen(false);
     } else {
         connect(m_fullScreenButton, &QPushButton::clicked, m_videoWidget, &QVideoWidget::setFullScreen);
-        //connect(m_videoWidget, &QVideoWidget::fullScreenChanged, m_fullScreenButton, &QPushButton::setChecked);
+        connect(m_videoWidget, &QVideoWidget::fullScreenChanged, m_fullScreenButton, &QPushButton::setChecked);
 
-        /*if (m_fullScreenButton->isChecked())
-            m_videoWidget->setFullScreen(true);*/
+        if (m_fullScreenButton->isChecked())
+            m_videoWidget->setFullScreen(true);
     }
-    //m_colorButton->setEnabled(available);
+    m_colorButton->setEnabled(available);
 }
 
 void Player::setTrackInfo(const QString &info)
@@ -592,52 +496,3 @@ void Player::clearHistogram()
     QMetaObject::invokeMethod(m_videoHistogram, "processFrame", Qt::QueuedConnection, Q_ARG(QVideoFrame, QVideoFrame()));
     QMetaObject::invokeMethod(m_audioHistogram, "processBuffer", Qt::QueuedConnection, Q_ARG(QAudioBuffer, QAudioBuffer()));
 }
-
-void Player::dragEnterEvent(QDragEnterEvent *event)
-{
-    // Обязательно необходимо допустить событие переноса данных в область окна приложения
-    event->accept();
-    cout << "EnterEv\n";
-}
-
-void Player::dropEvent(QDropEvent *event)
-{
-    cout << "DropEv\n";
-    // Когда отпускаем файл в область приложения,
-    // то забираем путь к файлу из MIME данных
-    //QUrl filePath = "testfile://" + event->mimeData()->urls()[0].toLocalFile();
-    //cout << filePath << "\n";
-
-    //m_playlist->addMedia(filePath);
-    for (auto &url: event->mimeData()->urls()) {
-    QUrl path = "file://" + url.toLocalFile();
-    cout << path.toString() << "\n";
-    QList<QUrl> pathList;
-    pathList.append(path);
-    addToPlaylist(pathList);
-    }
-
-
-}
-
-/*void Player::mousePressEvent(QMouseEvent *event)
-{
-    if (event->button() == Qt::LeftButton) {
-
-        cout << "hello" << "\n";
-
-        QDrag *drag = new QDrag(this);
-        QMimeData *mimeData = new QMimeData;
-
-        mimeData->setText("123");
-        drag->setMimeData(mimeData);
-        //drag->setPixmap(iconPixmap);
-
-        //Qt::DropAction dropAction = drag->exec();
-    }
-}*/
-
-/*Qt::DropActions DragDropListModel::supportedDropActions() const
-{
-    return Qt::CopyAction | Qt::MoveAction;
-}*/

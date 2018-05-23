@@ -83,7 +83,6 @@ signals:
     void pause();
     void stop();
     void next();
-    //void deleteClicked(const QModelIndex &index);
     void previous();
     void changeVolume(int volume);
     void changeMuting(bool muting);
@@ -91,7 +90,6 @@ signals:
 
 private slots:
     void playClicked();
-    //void deleteClicked();
     void muteClicked();
     void updateRate();
     void onVolumeSliderValueChanged();
@@ -100,12 +98,14 @@ private:
     QMediaPlayer::State m_playerState = QMediaPlayer::StoppedState;
     bool m_playerMuted = false;
     QAbstractButton *m_playButton = nullptr;
-    QAbstractButton *m_deleteButton = nullptr;
     QAbstractButton *m_stopButton = nullptr;
     QAbstractButton *m_nextButton = nullptr;
     QAbstractButton *m_previousButton = nullptr;
     QAbstractButton *m_muteButton = nullptr;
     QAbstractSlider *m_volumeSlider = nullptr;
+    //
+    //QAbstractButton *m_deleteButton = nullptr;
+    //
     QComboBox *m_rateBox = nullptr;
 };
 

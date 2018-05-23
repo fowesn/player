@@ -74,23 +74,9 @@ public:
 
     int rowCount(const QModelIndex &parent = QModelIndex()) const override;
     int columnCount(const QModelIndex &parent = QModelIndex()) const override;
-    //bool insertRows(int row, int count, const QModelIndex &parent);
-    //bool removeRows(int row, int count, const QModelIndex &parent);
+
     Qt::DropActions supportedDropActions() const;
-    //Qt::DropActions supportedDragActions() const;
     Qt::ItemFlags flags(const QModelIndex &index) const;
-   // Qt::ItemFlags flags(const QModelIndex &index) const override;
-
-    //bool insertRows(int position, int rows, const QModelIndex &index = QModelIndex());
-   // bool removeRows(int position, int rows, const QModelIndex &index = QModelIndex());
-
-    bool insertRows(int position, int rows, const QModelIndex &index);
-
-    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
-
-    QStringList mimeTypes() const;
-
-    //QMimeData *mimeData(const QModelIndexList &indexes) const;
 
     QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
     QModelIndex parent(const QModelIndex &child) const override;
@@ -99,6 +85,12 @@ public:
 
     QMediaPlaylist *playlist() const;
     void setPlaylist(QMediaPlaylist *playlist);
+
+    // edits
+    bool dropMimeData(const QMimeData *data, Qt::DropAction action, int row, int column, const QModelIndex &parent);
+    bool insertRows(int row, int count, const QModelIndex &parent);
+    QStringList mimeTypes() const;
+    // end
 
     bool setData(const QModelIndex &index, const QVariant &value, int role = Qt::DisplayRole) override;
 

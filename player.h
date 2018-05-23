@@ -54,7 +54,6 @@
 #include <QWidget>
 #include <QMediaPlayer>
 #include <QMediaPlaylist>
-#include <QStandardItemModel>
 
 QT_BEGIN_NAMESPACE
 class QAbstractItemView;
@@ -66,8 +65,6 @@ class QSlider;
 class QVideoProbe;
 class QVideoWidget;
 class QAudioProbe;
-class QAbstractButton;
-
 QT_END_NAMESPACE
 
 class PlaylistModel;
@@ -84,24 +81,21 @@ public:
     bool isPlayerAvailable() const;
 
     void addToPlaylist(const QList<QUrl> &urls);
-
-    // Метод события перетаскивания
-    virtual void dragEnterEvent(QDragEnterEvent* event) override;
-    // Метод события отпускания объекта с данными
-    virtual void dropEvent(QDropEvent *event) override;
-    //void mousePressEvent(QMouseEvent *event) override;
-
+    void dragEnterEvent(QDragEnterEvent *event) override;
+    void dropEvent(QDropEvent *event) override;
 signals:
     void fullScreenChanged(bool fullScreen);
 
 private slots:
     void open();
+    //
+    void del();
+    //
     void durationChanged(qint64 duration);
     void positionChanged(qint64 progress);
     void metaDataChanged();
 
     void previousClicked();
-    void deleteClickedElement();
 
     void seek(int seconds);
     void jump(const QModelIndex &index);
@@ -131,7 +125,6 @@ private:
     QLabel *m_labelDuration = nullptr;
     QPushButton *m_fullScreenButton = nullptr;
     QPushButton *m_colorButton = nullptr;
-    QPushButton *delButton = nullptr;
     QDialog *m_colorDialog = nullptr;
 
     QLabel *m_labelHistogram = nullptr;
@@ -141,11 +134,13 @@ private:
     QAudioProbe *m_audioProbe = nullptr;
 
     PlaylistModel *m_playlistModel = nullptr;
-    //QStandardItemModel *m_playlistModel = nullptr;
     QAbstractItemView *m_playlistView = nullptr;
     QString m_trackInfo;
     QString m_statusInfo;
     qint64 m_duration;
+    //
+    int curItem;
+    //
 };
 
 #endif // PLAYER_H

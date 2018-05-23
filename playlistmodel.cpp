@@ -71,202 +71,6 @@ PlaylistModel::~PlaylistModel()
 {
 }
 
-/*Qt::DropActions PlaylistModel::supportedDropActions() const
-{
-    return Qt::MoveAction;
-}*/
-
-/*Qt::DropActions PlaylistModel::supportedDragActions() const
-{
-    return Qt::MoveAction;
-}*/
-
-/*Qt::ItemFlags PlaylistModel::flags(const QModelIndex &index) const
-{
-    QStringListModel *qstrmodel = new QStringListModel();
-
-    Qt::ItemFlags defaultFlags = qstrmodel->flags(index);
-
-     if (index.isValid())
-         return Qt::ItemIsDragEnabled | Qt::ItemIsDropEnabled | defaultFlags;
-     else
-         return Qt::ItemIsDropEnabled | defaultFlags;
- }*/
-
-/*bool PlaylistModel::insertRows(int row, int count, const QModelIndex &parent)
-{
-    if (count < 1 || row < 0 || row > rowCount() || parent.isValid())
-        return false;
-    beginInsertRows(parent, row, row + count - 1);
-    for(int index = row, end = row + count; index < end; ++index)
-        //m_data.insert(index, p(KnownField::Invalid, false));
-    endInsertRows();
-    return true;
-}*/
-
-/*bool PlaylistModel::removeRows(int row, int count, const QModelIndex &parent)
-{
-    if (count < 1 || row < 0 || (row + count) > rowCount() || parent.isValid())
-        return false;
-    beginRemoveRows(QModelIndex(), row, row + count - 1);
-    for(int index = row, end = row + count; index < end; ++index)
-        //m_data.removeAt(index);
-    endRemoveRows();
-    return true;
-}*/
-
-
-/*Qt::DropActions PlaylistModel::supportedDropActions() const
-{
-    return Qt::CopyAction | Qt::MoveAction;
-}*/
-
-/*bool PlaylistModel::insertRows(int position, int rows, const QModelIndex &parent)
- {
-     beginInsertRows(QModelIndex(), position, position+rows-1);
-
-     for (int row = 0; row < rows; ++row) {
-         m_playlist.insert(position, "");
-     }
-
-     endInsertRows();
-     return true;
- }
-
-bool PlaylistModel::removeRows(int position, int rows, const QModelIndex &parent)
- {
-     beginRemoveRows(QModelIndex(), position, position+rows-1);
-
-     for (int row = 0; row < rows; ++row) {
-         m_playlist.removeAt(position);
-     }
-
-     endRemoveRows();
-     return true;
- }*/
-
-Qt::ItemFlags PlaylistModel::flags(const QModelIndex &index) const
-{
-
-    Qt::ItemFlags defaultFlags = QAbstractItemModel::flags(index);
-
-    if (index.isValid())
-        return Qt::ItemIsDragEnabled | defaultFlags;
-    else
-        return Qt::ItemIsDropEnabled | defaultFlags;
-}
-
-QStringList PlaylistModel::mimeTypes() const
-{
-    QStringList types;
-    types << "application/x-qabstractitemmodeldatalist";
-    return types;
-}
-
-Qt::DropActions PlaylistModel::supportedDropActions() const
-{
-    return Qt::CopyAction | Qt::MoveAction;
-}
-
-/*QMimeData *PlaylistModel::mimeData(const QModelIndexList &indexes) const
-{
-    QMimeData *mimeData = new QMimeData();
-    QByteArray encodedData;
-
-    QDataStream stream(&encodedData, QIODevice::WriteOnly);
-
-    foreach (const QModelIndex &index, indexes) {
-        if (index.isValid()) {
-            //QString text = data(index, Qt::DisplayRole).toString();
-            //QString text = index.row();
-            stream << index.row();
-        }
-    }
-
-    mimeData->setData("application/x-qabstractitemmodeldatalist", encodedData);
-    return mimeData;
-}*/
-
-bool PlaylistModel::dropMimeData(const QMimeData *data,
-    Qt::DropAction action, int row, int column, const QModelIndex &parent)
-{
-    if (!canDropMimeData(data, action, row, column, parent))
-        return false;
-
-    if (action == Qt::IgnoreAction)
-        return true;
-
-    int beginRow;
-
-      if (row != -1)
-          beginRow = row;
-
-      else if (parent.isValid())
-            beginRow = parent.row();
-
-      else
-            beginRow = rowCount(QModelIndex());
-
-      QByteArray encodedData = data->data("application/x-qabstractitemmodeldatalist");
-      QDataStream stream(&encodedData, QIODevice::ReadOnly);
-          /*QStringList newItems;
-          int rows = 0;
-
-          while (!stream.atEnd()) {
-              QString text;
-              stream >> text;
-              newItems << text;
-              ++rows;
-          }*/
-          int oneId;
-          QMap<int,  QVariant> roleDataMap;
-          QList <int> id;
-          int col;
-          while (!stream.atEnd()) {
-          stream >> oneId >> col >> roleDataMap;
-          id.append(oneId);
-          }
-
-          qSort(id.begin(), id.end(), qGreater<int>());
-          int j = 0;
-          for (auto &k: id ) {
-              if (k <= beginRow) {
-                beginRow--;
-                QMediaContent m = m_playlist->media(k);
-                m_playlist->removeMedia(k);
-                m_playlist->insertMedia(beginRow, m);
-              } else {
-                QMediaContent m = m_playlist->media(k+j);
-                m_playlist->removeMedia(k+j);
-                m_playlist->insertMedia(beginRow, m);
-              }
-          if (k > beginRow) {j++;}
-          }
-          //++beginRow;
-
-
-
-
-           /*foreach (const QString &text, newItems) {
-               QModelIndex idx = index(beginRow, 0, QModelIndex());
-               setData(idx, text);
-               beginRow++;
-           }*/
-
-           return true;
-}
-
-bool PlaylistModel::insertRows(int position, int rows, const QModelIndex &index)
-{
-    Q_UNUSED(index);
-    beginInsertRows(QModelIndex(), position, position+rows-1);
-
-    m_playlist->moveMedia(position, rows);
-    endInsertRows();
-    return true;
-}
-
-
 int PlaylistModel::rowCount(const QModelIndex &parent) const
 {
     return m_playlist && !parent.isValid() ? m_playlist->mediaCount() : 0;
@@ -349,7 +153,105 @@ void PlaylistModel::beginInsertItems(int start, int end)
     m_data.clear();
     beginInsertRows(QModelIndex(), start, end);
 }
+Qt::ItemFlags PlaylistModel::flags(const QModelIndex &index) const
+{
 
+    Qt::ItemFlags defaultFlags = QAbstractItemModel::flags(index);
+
+    if (index.isValid())
+        return Qt::ItemIsDragEnabled | defaultFlags;
+    else
+        return Qt::ItemIsDropEnabled | defaultFlags;
+}
+
+QStringList PlaylistModel::mimeTypes() const
+{
+    QStringList types;
+    types << "application/x-qabstractitemmodeldatalist";
+    return types;
+}
+Qt::DropActions PlaylistModel::supportedDropActions() const
+{
+    return Qt::CopyAction | Qt::MoveAction;
+}
+bool PlaylistModel::dropMimeData(const QMimeData *data,
+    Qt::DropAction action, int row, int column, const QModelIndex &parent)
+{
+    if (!canDropMimeData(data, action, row, column, parent))
+        return false;
+
+    if (action == Qt::IgnoreAction)
+        return true;
+
+    int beginRow;
+
+      if (row != -1)
+          beginRow = row;
+
+      else if (parent.isValid())
+            beginRow = parent.row();
+
+      else
+            beginRow = rowCount(QModelIndex());
+
+      QByteArray encodedData = data->data("application/x-qabstractitemmodeldatalist");
+      QDataStream stream(&encodedData, QIODevice::ReadOnly);
+          /*QStringList newItems;
+          int rows = 0;
+
+          while (!stream.atEnd()) {
+              QString text;
+              stream >> text;
+              newItems << text;
+              ++rows;
+          }*/
+          int oneId;
+          QMap<int,  QVariant> roleDataMap;
+          QList <int> id;
+          int col;
+          while (!stream.atEnd()) {
+          stream >> oneId >> col >> roleDataMap;
+          id.append(oneId);
+          }
+
+          qSort(id.begin(), id.end(), qGreater<int>());
+          int j = 0;
+          for (auto &k: id ) {
+              if (k <= beginRow) {
+                beginRow--;
+                QMediaContent m = m_playlist->media(k);
+                m_playlist->removeMedia(k);
+                m_playlist->insertMedia(beginRow, m);
+              } else {
+                QMediaContent m = m_playlist->media(k+j);
+                m_playlist->removeMedia(k+j);
+                m_playlist->insertMedia(beginRow, m);
+              }
+          if (k > beginRow) {j++;}
+          }
+          //++beginRow;
+
+
+
+
+           /*foreach (const QString &text, newItems) {
+               QModelIndex idx = index(beginRow, 0, QModelIndex());
+               setData(idx, text);
+               beginRow++;
+           }*/
+
+           return true;
+}
+
+bool PlaylistModel::insertRows(int position, int rows, const QModelIndex &index)
+{
+    Q_UNUSED(index);
+    beginInsertRows(QModelIndex(), position, position+rows-1);
+
+    m_playlist->moveMedia(position, rows);
+    endInsertRows();
+    return true;
+}
 void PlaylistModel::endInsertItems()
 {
     endInsertRows();
