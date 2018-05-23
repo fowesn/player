@@ -64,7 +64,12 @@ PlayerControls::PlayerControls(QWidget *parent)
     m_playButton->setIcon(style()->standardIcon(QStyle::SP_MediaPlay));
 
     connect(m_playButton, &QAbstractButton::clicked, this, &PlayerControls::playClicked);
+    /*
+    m_deleteButton = new QToolButton(this);
+    m_deleteButton->setIcon(style()->standardIcon(QStyle::SP_TrashIcon));
 
+    connect(m_deleteButton, &QAbstractButton::clicked, this, &PlayerControls::deleteClicked);
+    */
     m_stopButton = new QToolButton(this);
     m_stopButton->setIcon(style()->standardIcon(QStyle::SP_MediaStop));
     m_stopButton->setEnabled(false);
@@ -108,6 +113,7 @@ PlayerControls::PlayerControls(QWidget *parent)
     layout->addWidget(m_muteButton);
     layout->addWidget(m_volumeSlider);
     layout->addWidget(m_rateBox);
+    layout->addWidget(m_deleteButton);
     setLayout(layout);
 }
 
@@ -184,6 +190,13 @@ void PlayerControls::playClicked()
         break;
     }
 }
+
+/*void PlayerControls::deleteClicked()
+{
+    //cout << m_playerState << endl;
+
+   // m_playerState->removeMedia();
+}*/
 
 void PlayerControls::muteClicked()
 {
